@@ -1,7 +1,9 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Candidate } from '../types';
 import Layout from '../components/layout/Layout';
-import { InsightsSummary, InsightsCharts, LocationHeatmap } from '../components/insights';
+import InsightsSummary from '../components/insights/InsightsSummary';
+import InsightsCharts from '../components/insights/InsightsCharts';
+import LocationHeatmap from '../components/insights/LocationHeatmap';
 import { fetchCandidatesData } from '../data/candidatesData';
 import { Loader2, BarChart3, Map, ChevronDown, Info } from 'lucide-react';
 
@@ -99,16 +101,7 @@ const Insights: React.FC = () => {
           
           {expandedSections.geography && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1">
-              <Suspense fallback={
-                <div className="flex items-center justify-center h-[500px] bg-gray-50">
-                  <div className="text-center">
-                    <Map size={30} className="mx-auto text-gray-300 mb-2" />
-                    <p className="text-gray-400">Loading map...</p>
-                  </div>
-                </div>
-              }>
-                <LocationHeatmap candidates={candidates} />
-              </Suspense>
+              <LocationHeatmap candidates={candidates} />
             </div>
           )}
         </section>
