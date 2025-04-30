@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Map Marker Animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pulse-marker {
+  animation: pulse 2s infinite;
+  transform-origin: center;
+}
+
+/* Map Pin Marker */
+.map-marker {
+  position: relative;
+  width: 18px;
+  height: 24px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+.marker-pin {
+  width: 18px;
+  height: 18px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50% 50% 50% 0;
+  background: #4338CA;
+  transform: rotate(-45deg);
+}
+
+.marker-pin::after {
+  content: '';
+  width: 18px;
+  height: 18px;
+  position: absolute;
+  bottom: -9px;
+  left: 0;
+  transform: rotate(45deg);
+  border-radius: 0 50% 50% 0;
+  background: inherit;
+}
+
+.marker-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: 5px;
+  background: white;
+  border-radius: 50%;
+}
+
+.custom-div-icon {
+  background: none !important;
+  border: none !important;
+}
+
+.map-marker:hover {
+  z-index: 1000 !important;
+  transform: scale(1.1);
+}
+
+/* Custom Popup Styles */
+.custom-popup .leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0;
+}
+
+.custom-popup .leaflet-popup-content {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.custom-popup .leaflet-popup-tip-container {
+  margin-top: -1px;
+}
+
+/* Candidate Popup Specific Styles */
+.candidate-popup .leaflet-popup-content-wrapper {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.candidate-popup .leaflet-popup-content {
+  width: auto !important;
+}
+
+.candidate-popup .map-popup-content {
+  padding: 0;
+}
+
+.candidate-popup .map-popup-content > div {
+  border: none;
+  box-shadow: none;
+  margin: 0;
+}
+
+/* Cluster Marker Styles */
+.cluster-marker {
+  color: white;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.cluster-marker.small {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.cluster-marker.medium {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+}
+
+.cluster-marker.large {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.custom-cluster-icon {
+  background: none !important;
+  border: none !important;
+}
