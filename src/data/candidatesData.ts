@@ -1,42 +1,5 @@
 import { Candidate, LocationCoordinates } from '../types';
 
-// Map of city to approximate coordinates
-const cityCoordinates: Record<string, LocationCoordinates> = {
-  'Hyderabad, India': { lat: 17.385, lng: 78.4867 },
-  'Ahmedabad, India': { lat: 23.0225, lng: 72.5714 },
-  'Thanjavur, India': { lat: 10.7870, lng: 79.1378 },
-  'Surat, Gujarat, India': { lat: 21.1702, lng: 72.8311 },
-  'Navi Mumbai, India': { lat: 19.0330, lng: 73.0297 },
-  'Mumbai, India': { lat: 19.0760, lng: 72.8777 },
-  'Shirdi, Maharashtra, India': { lat: 19.7645, lng: 74.4763 },
-  'Noida, India': { lat: 28.5355, lng: 77.3910 },
-  'Bangalore, Karnataka, India': { lat: 12.9716, lng: 77.5946 },
-  'Remote': { lat: 0, lng: 0 },
-  'Unknown': { lat: 0, lng: 0 }
-};
-
-// Function to get coordinates based on location name
-const getCoordinatesForLocation = (location: string): LocationCoordinates | null => {
-  // Try exact match
-  if (cityCoordinates[location]) {
-    return cityCoordinates[location];
-  }
-  
-  // Try partial match
-  for (const [city, coords] of Object.entries(cityCoordinates)) {
-    if (location.includes(city.split(',')[0])) {
-      return coords;
-    }
-  }
-  
-  // Generate random coordinates near India if no match
-  // India's approximate bounds: lat 8-37, lng 68-97
-  return {
-    lat: 22 + (Math.random() * 8 - 4),
-    lng: 78 + (Math.random() * 10 - 5)
-  };
-};
-
 // Fetch resume data from the provided URL
 export const fetchCandidatesData = async (): Promise<Candidate[]> => {
   try {

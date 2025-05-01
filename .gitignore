@@ -27,3 +27,4 @@ dist-ssr
 *.history
 
 .vercel
+software=stack.md
