@@ -1,6 +1,6 @@
 # HR Candidates Dashboard
 
-A React TypeScript application for HR professionals to browse, filter, and evaluate job candidates based on their resumes and skills.
+A beautiful, modern React TypeScript application for HR professionals to manage job candidates. This dashboard enables filtering, sorting, and comparison of thousands of resumes, with AI-powered recommendations that rank candidates based on your specific job requirements.
 
 ## Screenshots
 
@@ -12,10 +12,11 @@ A React TypeScript application for HR professionals to browse, filter, and evalu
 
 ## Features
 
+- **Resume Parsing**: Upload resumes to extract structured data automatically.
 - **Candidate Browsing**: View and sort a list of job candidates with their key information.
 - **Advanced Filtering**: Filter candidates by experience level, skills, location, and employment status.
 - **Job Requirement Matching**: Input job requirements and see candidates ranked by relevance.
-- **Skills Normalization**: Automatically groups similar skills (e.g., "React", "ReactJS", "React.js") for better filtering.
+- **Skills Normalization**: Group similar skills (e.g., "React", "ReactJS", "React.js") for better filtering.
 - **Location-based Sorting**: Sort candidates by proximity to a specified location.
 - **Data Visualization**: View insights about candidate skills and experience distribution.
 - **Responsive Design**: Works on desktop and mobile devices.
@@ -125,12 +126,11 @@ The application is configured for deployment on Vercel. Simply connect your repo
 
 ## Data Source
 
-The application fetches candidate data from a JSON file containing parsed resumes. The data includes:
-- Personal information (name, location, etc.)
-- Work experience
+The dashboard displays data extracted from candidate resumes, including:
+- Personal information and contact details
+- Work experience 
 - Projects
 - Skills
-- Education
 
 ## License
 
