@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Insights from './pages/Insights';
+import ResumeUpload from './pages/ResumeUpload';
+import CandidateDetails from './pages/CandidateDetails';
 import { Loader2 } from 'lucide-react';
 
 function App() {
@@ -35,6 +37,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/insights" element={<Insights />} />
+        <Route path="/upload" element={<ResumeUpload />} />
+        <Route path="/candidate/:hashPrefix" element={<CandidateDetails />} />
       </Routes>
     </Router>
   );

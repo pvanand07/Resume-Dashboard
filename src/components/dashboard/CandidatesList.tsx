@@ -1,25 +1,37 @@
 import React from 'react';
 import { Candidate, SortOption, LocationCoordinates, GroupedSkillsMap } from '../../types';
 import CandidateCard from './CandidateCard';
-import { FileDown, Users, SortAsc, SortDesc, Locate, Star, Clock } from 'lucide-react';
+import { FileDown, Users, SortAsc, SortDesc, Locate, Star, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { exportCandidateData } from '../../utils/filterUtils';
+
+interface PaginationState {
+  currentPage: number;
+  itemsPerPage: number;
+  totalPages: number;
+}
 
 interface CandidatesListProps {
   candidates: Candidate[];
+  totalCandidates: number;
   sortOption: SortOption;
   onSortChange: (sortOption: SortOption) => void;
   userLocation?: LocationCoordinates;
   onUserLocationChange: (location: LocationCoordinates | undefined) => void;
   groupedSkillsMap?: GroupedSkillsMap;
+  pagination: PaginationState;
+  onPageChange: (page: number) => void;
 }
 
 const CandidatesList: React.FC<CandidatesListProps> = ({
   candidates,
+  totalCandidates,
   sortOption,
   onSortChange,
   userLocation,
   onUserLocationChange,
-  groupedSkillsMap
+  groupedSkillsMap,
+  pagination,
+  onPageChange
 }) => {
   const handleExport = () => {
     exportCandidateData(candidates);
@@ -67,6 +79,54 @@ const CandidatesList: React.FC<CandidatesListProps> = ({
     }
   };
 
+  // Pagination handlers
+  const handlePreviousPage = () => {
+    if (pagination.currentPage > 1) {
+      onPageChange(pagination.currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (pagination.currentPage < pagination.totalPages) {
+      onPageChange(pagination.currentPage + 1);
+    }
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const { currentPage, totalPages } = pagination;
+    const pageNumbers = [];
+    
+    // Always show first page
+    pageNumbers.push(1);
+    
+    // Calculate range around current page
+    let startPage = Math.max(2, currentPage - 1);
+    let endPage = Math.min(totalPages - 1, currentPage + 1);
+    
+    // Add ellipsis after first page if needed
+    if (startPage > 2) {
+      pageNumbers.push('...');
+    }
+    
+    // Add page numbers around current page
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
+    // Add ellipsis before last page if needed
+    if (endPage < totalPages - 1) {
+      pageNumbers.push('...');
+    }
+    
+    // Add last page if there's more than one page
+    if (totalPages > 1) {
+      pageNumbers.push(totalPages);
+    }
+    
+    return pageNumbers;
+  };
+
   // Function to render sort button with appropriate icon
   const renderSortButton = (field: SortOption['field'], label: string, icon: React.ReactNode) => {
     const isActive = sortOption.field === field;
@@ -90,13 +150,69 @@ const CandidatesList: React.FC<CandidatesListProps> = ({
     );
   };
 
+  const renderPagination = () => {
+    const { currentPage, totalPages } = pagination;
+    
+    if (totalPages <= 1) return null;
+    
+    const pageNumbers = getPageNumbers();
+    
+    return (
+      <div className="flex items-center justify-center mt-8 space-x-1">
+        <button
+          onClick={handlePreviousPage}
+          disabled={currentPage === 1}
+          className={`p-2 rounded-md ${
+            currentPage === 1
+              ? 'text-gray-400 cursor-not-allowed'
+              : 'text-gray-700 hover:bg-gray-100'
+          }`}
+          aria-label="Previous page"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        
+        {pageNumbers.map((page, index) => (
+          page === '...' ? (
+            <span key={`ellipsis-${index}`} className="px-3 py-1 text-gray-500">...</span>
+          ) : (
+            <button
+              key={`page-${page}`}
+              onClick={() => typeof page === 'number' && onPageChange(page)}
+              className={`px-3 py-1 rounded-md ${
+                currentPage === page
+                  ? 'bg-primary-50 text-primary-700 font-medium'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {page}
+            </button>
+          )
+        ))}
+        
+        <button
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages}
+          className={`p-2 rounded-md ${
+            currentPage === totalPages
+              ? 'text-gray-400 cursor-not-allowed'
+              : 'text-gray-700 hover:bg-gray-100'
+          }`}
+          aria-label="Next page"
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           <Users size={20} className="mr-2 text-gray-400" />
           <h2 className="text-lg font-medium text-gray-900">
-            Candidates <span className="text-gray-500">({candidates.length})</span>
+            Candidates <span className="text-gray-500">({totalCandidates})</span>
           </h2>
         </div>
         
@@ -132,16 +248,20 @@ const CandidatesList: React.FC<CandidatesListProps> = ({
           <p className="text-sm text-gray-400">Try adjusting your search criteria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {candidates.map((candidate) => (
-            <CandidateCard
-              key={candidate.id}
-              candidate={candidate}
-              userLocation={userLocation}
-              groupedSkillsMap={groupedSkillsMap}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {candidates.map((candidate) => (
+              <CandidateCard
+                key={candidate.id}
+                candidate={candidate}
+                userLocation={userLocation}
+                groupedSkillsMap={groupedSkillsMap}
+              />
+            ))}
+          </div>
+          
+          {renderPagination()}
+        </>
       )}
     </div>
   );

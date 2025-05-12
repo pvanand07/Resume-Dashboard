@@ -3,7 +3,7 @@ import { Candidate, LocationCoordinates } from '../types';
 // Fetch resume data from the provided URL
 export const fetchCandidatesData = async (): Promise<Candidate[]> => {
   try {
-    const response = await fetch('https://raw.githubusercontent.com/pvanand07/ai-candidates-dashboard/refs/heads/master/resumes.json');
+    const response = await fetch('https://resume-parser-api.elevatics.site/resume-results-raw');
     
     if (!response.ok) {
       throw new Error('Failed to fetch candidates data');

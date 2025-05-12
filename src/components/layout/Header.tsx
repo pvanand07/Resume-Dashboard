@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, BarChart3 } from 'lucide-react';
+import { Users, BarChart3, UploadCloud } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Header: React.FC = () => {
@@ -42,6 +42,18 @@ const Header: React.FC = () => {
           >
             <BarChart3 size={18} />
             <span>Insights</span>
+          </Link>
+          
+          <Link 
+            to="/upload"
+            className={`px-4 py-2 rounded-md flex items-center space-x-1 transition-colors ${
+              isActive('/upload') 
+                ? 'bg-primary-50 text-primary-700' 
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <UploadCloud size={18} />
+            <span>Upload Resume</span>
           </Link>
         </nav>
         

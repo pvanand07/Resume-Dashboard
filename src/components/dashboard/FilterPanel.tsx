@@ -1,6 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FilterType, LocationCoordinates, GroupedSkillsMap } from '../../types';
 import { Search, X, Filter, ChevronDown, ChevronUp, MapPin, Check, Info, Users } from 'lucide-react';
+
+// Custom hook for debounced value
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface Location {
   location: string;
@@ -29,27 +46,44 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   countsBySkill = new Map()
 }) => {
   const [showFilters, setShowFilters] = useState(false);
+  const [localFilters, setLocalFilters] = useState<FilterType>(filters);
   const [localJobRequirement, setLocalJobRequirement] = useState(filters.jobRequirement);
   const [isJobRequirementUpdating, setIsJobRequirementUpdating] = useState(false);
   const [expandedSkills, setExpandedSkills] = useState<Set<string>>(new Set());
+
+  // Debounce the search input to prevent excessive filtering
+  const debouncedSearchTerm = useDebounce(localFilters.search, 300);
   
   // Update local state when props change
   useEffect(() => {
     setLocalJobRequirement(filters.jobRequirement);
-  }, [filters.jobRequirement]);
+    setLocalFilters(filters);
+  }, [filters]);
   
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilterChange({
-      ...filters,
+  // Apply the debounced search term to the actual filters
+  useEffect(() => {
+    if (debouncedSearchTerm !== filters.search) {
+      onFilterChange({
+        ...filters,
+        search: debouncedSearchTerm,
+      });
+    }
+  }, [debouncedSearchTerm, filters, onFilterChange]);
+  
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalFilters(prev => ({
+      ...prev,
       search: e.target.value,
-    });
-  };
+    }));
+  }, []);
   
-  const handleLocalJobRequirementChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleLocalJobRequirementChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setLocalJobRequirement(e.target.value);
-  };
+  }, []);
   
-  const handleApplyJobRequirement = () => {
+  const handleApplyJobRequirement = useCallback(() => {
+    if (localJobRequirement === filters.jobRequirement) return;
+    
     setIsJobRequirementUpdating(true);
     
     // Use setTimeout to allow UI to update with loading state before heavy calculation starts
@@ -64,9 +98,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         setIsJobRequirementUpdating(false);
       }, 500);
     }, 100);
-  };
+  }, [filters, localJobRequirement, onFilterChange]);
   
-  const handleExperienceChange = (level: string) => {
+  const handleExperienceChange = useCallback((level: string) => {
     const updatedExperience = filters.experience.includes(level)
       ? filters.experience.filter((exp) => exp !== level)
       : [...filters.experience, level];
@@ -75,9 +109,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       ...filters,
       experience: updatedExperience,
     });
-  };
+  }, [filters, onFilterChange]);
   
-  const handleSkillChange = (skill: string) => {
+  const handleSkillChange = useCallback((skill: string) => {
     const updatedSkills = filters.skills.includes(skill)
       ? filters.skills.filter((s) => s !== skill)
       : [...filters.skills, skill];
@@ -95,9 +129,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       ...filters,
       skills: updatedSkills,
     });
-  };
+  }, [filters, expandedSkills, onFilterChange]);
   
-  const handleLocationChange = (location: string) => {
+  const handleLocationChange = useCallback((location: string) => {
     const updatedLocations = filters.location.includes(location)
       ? filters.location.filter((loc) => loc !== location)
       : [...filters.location, location];
@@ -106,9 +140,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       ...filters,
       location: updatedLocations,
     });
-  };
+  }, [filters, onFilterChange]);
   
-  const handleEmploymentStatusChange = (status: string) => {
+  const handleEmploymentStatusChange = useCallback((status: string) => {
     const updatedStatuses = filters.employmentStatus.includes(status)
       ? filters.employmentStatus.filter((s) => s !== status)
       : [...filters.employmentStatus, status];
@@ -117,9 +151,18 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       ...filters,
       employmentStatus: updatedStatuses,
     });
-  };
+  }, [filters, onFilterChange]);
   
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
+    setLocalFilters(prev => ({
+      ...prev,
+      search: '',
+      experience: [],
+      skills: [],
+      location: [],
+      employmentStatus: [],
+    }));
+    
     onFilterChange({
       search: '',
       experience: [],
@@ -128,9 +171,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       employmentStatus: [],
       jobRequirement: filters.jobRequirement,
     });
-  };
+  }, [filters.jobRequirement, onFilterChange]);
   
-  const hasActiveFilters = () => {
+  const hasActiveFilters = useCallback(() => {
     return (
       filters.search !== '' ||
       filters.experience.length > 0 ||
@@ -138,21 +181,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       filters.location.length > 0 ||
       filters.employmentStatus.length > 0
     );
-  };
+  }, [filters]);
 
   // Get related skills for a normalized skill
-  const getRelatedSkills = (normalizedSkill: string): string[] => {
+  const getRelatedSkills = useCallback((normalizedSkill: string): string[] => {
     if (!groupedSkillsMap) return [normalizedSkill];
     return groupedSkillsMap.get(normalizedSkill) || [normalizedSkill];
-  };
+  }, [groupedSkillsMap]);
   
   // Get candidate count for a skill
-  const getCandidateCount = (skill: string): number => {
+  const getCandidateCount = useCallback((skill: string): number => {
     return countsBySkill.get(skill) || 0;
-  };
+  }, [countsBySkill]);
   
   // Toggle expansion of a skill's related skills
-  const toggleSkillExpansion = (skill: string) => {
+  const toggleSkillExpansion = useCallback((skill: string) => {
     const newExpandedSkills = new Set(expandedSkills);
     if (newExpandedSkills.has(skill)) {
       newExpandedSkills.delete(skill);
@@ -160,7 +203,76 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       newExpandedSkills.add(skill);
     }
     setExpandedSkills(newExpandedSkills);
-  };
+  }, [expandedSkills]);
+
+  // Memoize the skills list for rendering optimization
+  const renderedSkillsList = React.useMemo(() => {
+    return skillsList.slice(0, 20).map((skill) => (
+      <div key={skill} className="relative">
+        <div className="flex items-center group">
+          <label className="flex items-center flex-1 cursor-pointer py-1">
+            <input
+              type="checkbox"
+              className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4"
+              checked={filters.skills.includes(skill)}
+              onChange={() => handleSkillChange(skill)}
+            />
+            <span className="ml-2 text-sm text-gray-700">{skill}</span>
+          </label>
+          
+          {/* Show candidate count */}
+          {getCandidateCount(skill) > 0 && (
+            <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full flex items-center">
+              <Users size={10} className="mr-0.5" />
+              {getCandidateCount(skill)}
+            </span>
+          )}
+          
+          {/* Show expand button for skills with variations */}
+          {groupedSkillsMap && getRelatedSkills(skill).length > 1 && (
+            <button
+              className="ml-1 p-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+              onClick={() => toggleSkillExpansion(skill)}
+              title={expandedSkills.has(skill) ? "Hide related skills" : "Show related skills"}
+            >
+              {expandedSkills.has(skill) ? 
+                <ChevronUp size={14} /> : 
+                <ChevronDown size={14} />
+              }
+            </button>
+          )}
+        </div>
+        
+        {/* Related skills section - shown when skill is selected or manually expanded */}
+        {groupedSkillsMap && 
+         getRelatedSkills(skill).length > 1 && 
+         (filters.skills.includes(skill) || expandedSkills.has(skill)) && (
+          <div className="ml-6 mt-1 mb-2 border-l-2 border-primary-100 pl-2 text-xs">
+            <div className="text-gray-500 mb-1 flex items-center">
+              <Info size={10} className="mr-1 text-primary-400" />
+              Related skills:
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {getRelatedSkills(skill)
+                .filter(variant => variant !== skill) // Don't show the main skill again
+                .map((variant, i) => (
+                  <div key={i} className="flex items-center">
+                    <span className="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600">
+                      {variant}
+                    </span>
+                    {getCandidateCount(variant) > 0 && (
+                      <span className="ml-1 text-gray-400 text-[10px]">
+                        ({getCandidateCount(variant)})
+                      </span>
+                    )}
+                  </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    ));
+  }, [skillsList, filters.skills, expandedSkills, groupedSkillsMap, getCandidateCount, getRelatedSkills, handleSkillChange, toggleSkillExpansion]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6 animate-fade-in">
@@ -214,13 +326,16 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             type="text"
             className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
             placeholder="Search candidates by name, skills, location..."
-            value={filters.search}
+            value={localFilters.search}
             onChange={handleSearchChange}
           />
-          {filters.search && (
+          {localFilters.search && (
             <button
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onClick={() => onFilterChange({ ...filters, search: '' })}
+              onClick={() => {
+                setLocalFilters(prev => ({ ...prev, search: '' }));
+                onFilterChange({ ...filters, search: '' });
+              }}
             >
               <X size={16} className="text-gray-400 hover:text-gray-600" />
             </button>
@@ -277,71 +392,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             <div>
               <h3 className="font-medium text-sm text-gray-700 mb-2">Skills</h3>
               <div className="max-h-60 overflow-y-auto pr-2 space-y-0.5">
-                {skillsList.slice(0, 20).map((skill) => (
-                  <div key={skill} className="relative">
-                    <div className="flex items-center group">
-                      <label className="flex items-center flex-1 cursor-pointer py-1">
-                        <input
-                          type="checkbox"
-                          className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4"
-                          checked={filters.skills.includes(skill)}
-                          onChange={() => handleSkillChange(skill)}
-                        />
-                        <span className="ml-2 text-sm text-gray-700">{skill}</span>
-                      </label>
-                      
-                      {/* Show candidate count */}
-                      {getCandidateCount(skill) > 0 && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full flex items-center">
-                          <Users size={10} className="mr-0.5" />
-                          {getCandidateCount(skill)}
-                        </span>
-                      )}
-                      
-                      {/* Show expand button for skills with variations */}
-                      {groupedSkillsMap && getRelatedSkills(skill).length > 1 && (
-                        <button
-                          className="ml-1 p-1 text-gray-400 hover:text-gray-600 focus:outline-none"
-                          onClick={() => toggleSkillExpansion(skill)}
-                          title={expandedSkills.has(skill) ? "Hide related skills" : "Show related skills"}
-                        >
-                          {expandedSkills.has(skill) ? 
-                            <ChevronUp size={14} /> : 
-                            <ChevronDown size={14} />
-                          }
-                        </button>
-                      )}
-                    </div>
-                    
-                    {/* Related skills section - shown when skill is selected or manually expanded */}
-                    {groupedSkillsMap && 
-                     getRelatedSkills(skill).length > 1 && 
-                     (filters.skills.includes(skill) || expandedSkills.has(skill)) && (
-                      <div className="ml-6 mt-1 mb-2 border-l-2 border-primary-100 pl-2 text-xs">
-                        <div className="text-gray-500 mb-1 flex items-center">
-                          <Info size={10} className="mr-1 text-primary-400" />
-                          Related skills:
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {getRelatedSkills(skill)
-                            .filter(variant => variant !== skill) // Don't show the main skill again
-                            .map((variant, i) => (
-                              <div key={i} className="flex items-center">
-                                <span className="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600">
-                                  {variant}
-                                </span>
-                                {getCandidateCount(variant) > 0 && (
-                                  <span className="ml-1 text-gray-400 text-[10px]">
-                                    ({getCandidateCount(variant)})
-                                  </span>
-                                )}
-                              </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {renderedSkillsList}
               </div>
             </div>
             
@@ -405,7 +456,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           ))}
           
           {filters.skills.map(skill => (
-            <span key={skill} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
+            <span key={skill} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
               {skill}
               <button 
                 className="ml-1 focus:outline-none" 
@@ -417,7 +468,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           ))}
           
           {filters.location.map(loc => (
-            <span key={loc} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-accent-100 text-accent-800">
+            <span key={loc} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
               {loc}
               <button 
                 className="ml-1 focus:outline-none" 
@@ -429,7 +480,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           ))}
           
           {filters.employmentStatus.map(status => (
-            <span key={status} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
+            <span key={status} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
               {status}
               <button 
                 className="ml-1 focus:outline-none" 
@@ -439,10 +490,25 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               </button>
             </span>
           ))}
+          
+          {filters.search && (
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+              "{filters.search}"
+              <button 
+                className="ml-1 focus:outline-none" 
+                onClick={() => {
+                  setLocalFilters(prev => ({ ...prev, search: '' }));
+                  onFilterChange({ ...filters, search: '' });
+                }}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          )}
         </div>
       )}
     </div>
   );
 };
 
-export default FilterPanel;
+export default React.memo(FilterPanel);
